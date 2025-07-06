@@ -43,13 +43,12 @@ def discharge_to_grid(rate_to_discharge):
     if not (0 <= rate_to_discharge <= max_uint_32):
         raise ValueError("Rate to discharge must be between 0 and 4294967295.")
 
-    # Ensure subtraction doesn't cause underflow
-    safe_value = max_uint_32 - rate_to_discharge if rate_to_discharge <= max_uint_32 else 0
-
+    safe_value = (0 - rate_to_discharge) & 0xFFFFFFFF
     upper, lower = split_into_ushorts(safe_value)
 
-    client.write_register(2703, upper, unit=1)  # Upper 16 bits
-    client.write_register(2704, lower, unit=1)  # Lower 16 bits
+    #Big-endian
+    client.write_register(2703, upper, unit=1)  
+    client.write_register(2704, lower, unit=1)  
     return
 
 def split_into_ushorts(number):

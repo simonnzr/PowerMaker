@@ -230,12 +230,18 @@ def discharge_to_grid(rate_to_discharge):
   
     logging.info(f"Suggested export to Grid @ {rate_to_discharge/1000} kWh" )
     if (config.PROD):
-        max_int_32 = 2 ** 31 - 1
-        upper, lower = split_into_ushorts(max_int_32 - rate_to_discharge)
+        max_uint_32 = 2 ** 32 - 1  # Ensures we use the correct unsigned range
+    
+        # Ensure rate_to_discharge is within bounds
+        if not (0 <= rate_to_discharge <= max_uint_32):
+            raise ValueError("Rate to discharge must be between 0 and 4294967295.")
 
-        client.write_register(2703, upper, unit=1)
-        client.write_register(2704, lower, unit=1)
+        safe_value = (0 - rate_to_discharge) & 0xFFFFFFFF
+        upper, lower = split_into_ushorts(safe_value)
 
+        #Big-endian
+        client.write_register(2703, upper, unit=1)  
+        client.write_register(2704, lower, unit=1)  
     return
 
 def get_solar_generation():
